@@ -1,40 +1,34 @@
-# first run:
-# import sys
-# workdir = "/home/felixm/00_PhD/enki/enki_data/qgis_scripts"
-# sys.path.append(workdir)
-# import layer_settings as settings
+#import sys
+#workdir = "/home/sven/Documents/github/shyft-gis"
+#sys.path.append(workdir)
+#import layer_settings as settings
 
+import os
 import qgis 
 from qgis.core import QgsMapLayerRegistry
 from qgis.analysis import QgsZonalStatistics
 from qgis.core import QgsVectorLayer
 import process_layers as proc
+from shutil import copy
 
 from netCDF4 import Dataset
 
-class viksvatn_layers:
-    def __init__(self):
-        self.__name__ = "viksvatn"
-        self._path_to_polygon = "/home/felixm/00_PhD/enki/enki_data/norway/viksvatn/catchments/subcatch/"
-        self._path_to_raster = "/home/felixm/00_PhD/enki/enki_data/norway/general_rasters/landcover/outfiles/"
-        self.polygon_layer_files = ["subcatch_1_32N.shp",
-                          "subcatch_2_32N.shp",
-                          "subcatch_3_32N.shp",
-                          "subcatch_4_32N.shp",
-                          "subcatch_5_32N.shp",
-                          "subcatch_6_32N.shp"]
-        self.polygon_centroid_names = ["subcatch_1_centroid_32N",
-                          "subcatch_2_centroid_32N",
-                          "subcatch_3_centroid_32N",
-                          "subcatch_4_centroid_32N",
-                          "subcatch_5_centroid_32N",
-                          "subcatch_6_centroid_32N"]
+
+
+
+
+
+class catchment_layers:
+    def __init__(self, name, ptp, ptr, plf, pcn, rlf, dff):
+        self.__name__ = name
+        self._path_to_polygon = ptp
+        self._path_to_raster = ptr
+        self.polygon_layer_files = plf  #grid files
+        self.polygon_centroid_names = pcn #centroid
+
         self.polygon_layer_files = [self._path_to_polygon + f for f in self.polygon_layer_files]
         #self.polygon_centroid_files = [self._path_to_polygon + f for f in self.polygon_centroid_files]
-        self.raster_layer_files = ["corine_forest_mask_32N.tif",
-                        "corine_lake_mask_32N.tif",
-                        "corine_glacier_mask_32N.tif",
-                        "corine_reservoir_mask_32N.tif"] # reservoirs only zero at the moment
+        self.raster_layer_files = rlf # reservoirs only zero at the moment
         self.raster_layer_files = [self._path_to_raster + f for f in self.raster_layer_files]
         self.fraction_attribute_names = ["forest_",
                            "lake_",
@@ -42,40 +36,9 @@ class viksvatn_layers:
                            "reservoir_"]
         
         # DEM specific layers
-        self.dem_feature_files = ["/home/felixm/00_PhD/enki/enki_data/norway/viksvatn/dem/viksvatn_mosaic_from_saga.tif",
-                                  "/home/felixm/00_PhD/enki/enki_data/norway/viksvatn/dem/outfiles/viksvatn_slope.tif",
-                                  "/home/felixm/00_PhD/enki/enki_data/norway/viksvatn/dem/outfiles/viksvatn_aspect.tif"]
-        self.dem_feature_attribute_names = ["elevation_", "slope_", "aspect_"]
-        
-        # coordinate system specifications
-        self.epsg_code = "EPSG:32632"
-        self.grid_mapping_name = "transverse_mercator"
-        self.proj4 = "+proj=utm +zone=32 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-
-class atnsjoen_layers:
-    def __init__(self):
-        self.__name__ = "atnsjoen"
-        self._path_to_polygon = "/home/felixm/00_PhD/enki/enki_data/norway/atnasjo/catchments/subcatch/"
-        self._path_to_raster = "/home/felixm/00_PhD/enki/enki_data/norway/general_rasters/landcover/outfiles/"
-        self.polygon_layer_files = ["atnsjoen_subcatch_1_33N.shp"]
-        self.polygon_centroid_names = ["atnsjoen_subcatch_1_centroid_33N"]
-
-        self.polygon_layer_files = [self._path_to_polygon + f for f in self.polygon_layer_files]
-        #self.polygon_centroid_files = [self._path_to_polygon + f for f in self.polygon_centroid_files]
-        self.raster_layer_files = ["corine_forest_mask_33N.tif",
-                        "corine_lake_mask_33N.tif",
-                        "corine_glacier_mask_33N.tif",
-                        "corine_reservoir_mask_33N.tif"] # reservoirs only zero at the moment
-        self.raster_layer_files = [self._path_to_raster + f for f in self.raster_layer_files]
-        self.fraction_attribute_names = ["forest_",
-                           "lake_",
-                           "glacier_",
-                           "reservoir_"]
-        
-        # DEM specific layers
-        self.dem_feature_files = ["/home/felixm/00_PhD/enki/enki_data/norway/atnasjo/dem/atnsjo_dem.tif",
-                                  "/home/felixm/00_PhD/enki/enki_data/norway/atnasjo/dem/outfile/atnsjo_slope.tif",
-                                  "/home/felixm/00_PhD/enki/enki_data/norway/atnasjo/dem/outfile/atnsjo_aspect.tif"]
+        self._path_to_dem = ptd
+        self.dem_feature_files = dff
+        self.dem_feature_files = [self._path_to_dem + f for f in self.dem_feature_files]
         self.dem_feature_attribute_names = ["elevation_", "slope_", "aspect_"]
         
         # coordinate system specifications
@@ -83,21 +46,86 @@ class atnsjoen_layers:
         self.grid_mapping_name = "transverse_mercator"
         self.proj4 = "+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
 
-def viksvatn_fractions():
-    # calculate fractions for each subcatchment-features
-    viksvatn = viksvatn_layer()
-    proc.calculate_means(viksvatn.polygon_layer_files, viksvatn.raster_layer_files, viksvatn.attribute_names)
+
+    def copy_files(self, path_interm):
+    	'''
+    	to generate a work copy of original files
+    	(avoid changes at orig files)
+
+    	path_interm: path where to copy files
+    	'''
+    	for fn in self.polygon_layer_files:
+    		copy(fn, path_interm)
+            copy(fn[:-4]+".dbf", path_interm)
+            copy(fn[:-4]+".prj", path_interm)
+            copy(fn[:-4]+".qpj", path_interm) 
+            copy(fn[:-4]+".shx", path_interm)
+
+    	self.polygon_layer_files = [DATA_INT + f for f in self.polygon_layer_files]
+
+
+    def calculate_means(self):
+    # polygon_layer_files: list of absolute path polygon layer files
+    # raster_layer_files: list of absolute path raster layer files
+    # attribute_names: name prefix of newly calculated attributes (means from raster to polygon)
+    
+    #for landcover fractions
+    for poly in self.polygon_layer_files:
+        for rast, attr_name in zip(self.raster_layer_files, self.fraction_attribute_names):
+            assert os.path.isfile(poly), "File {} does not exist.".format(poly)
+            assert os.path.isfile(rast), "File {} does not exist.".format(rast)
+            poly_object = QgsVectorLayer(poly, 'zonepolygons', 'ogr')
+            zoneStat = QgsZonalStatistics(poly_object, rast, attr_name, 1, QgsZonalStatistics.Mean)
+            check = zoneStat.calculateStatistics(None)
+            assert check == 0, "zoneStat.calculateStatistics(None) returned non-zero value... check input layers!"
+
+    #for dem characteristics (elev, slope, aspect)
+    for poly in self.polygon_layer_files:
+        for rast, attr_name in zip(self.raster_layer_files, self.dem_feature_attribute_names):
+            assert os.path.isfile(poly), "File {} does not exist.".format(poly)
+            assert os.path.isfile(rast), "File {} does not exist.".format(rast)
+            poly_object = QgsVectorLayer(poly, 'zonepolygons', 'ogr')
+            zoneStat = QgsZonalStatistics(poly_object, rast, attr_name, 1, QgsZonalStatistics.Mean)
+            check = zoneStat.calculateStatistics(None)
+            assert check == 0, "zoneStat.calculateStatistics(None) returned non-zero value... check input layers!"
+
+    refresh_layers() # TODO: refresh does not work somehow... in qgis: reload layer and delete old one as workaround
+
+
+
+
+def setup_finse():
+    ptp = DATA_PATH+'shyft_catchments/' # path to polygon
+	ptr = DATA_PATH+'shyft_catchments/' # path to raster
+	ptd = DATA_PATH+'dem/'
+
+	plf = ["12.166_shyft_gridded/12.166_gridded.shp", 
+				"50.2_shyft_gridded/50.2_gridded.shp", 
+				"50.5_shyft_gridded/50.5_gridded.shp", 
+				"50.8_shyft_gridded/50.8_gridded.shp", 
+				"50.10_shyft_gridded/50.10_shyft_gridded.shp", 
+				"50.11_shyft_gridded/50.11_shyft_gridded.shp", 
+				"50.13_shyft_gridded/50.13_gridded.shp", 
+				"50.38_shyft_gridded/50.38_gridded.shp"] # polygon layer files
+
+	pcn = ["12.166_centroids", "50.2_centroids", "50.5_centroids", "50.8_centroids", "50.10_centroids", "50.11_centroids", "50.13_centroids", "50.38_centroids"]
+
+	rlf = ["g100_clc12_V18_5a/corine_forest_fraction.tif", 
+                "g100_clc12_V18_5a/corine_lake_fraction.tif",
+                "g100_clc12_V18_5a/corine_glacier_fraction.tif",
+                "g100_clc12_V18_5a/corine_reservoir_fraction.tif"] # raster layer files
+	dff = ["dem_finse.tif", "slope_finse.tif", "aspect_finse.tif"] # dem feature files
+	finse = catchment_layers("finse", ptp, ptr, plf, pcn, rlf, dff)
+	return finse
+
+
+
 
 def atnsjoen_fractions():
     # calculate fractions for each subcatchment-features
     atnsjoen = atnsjoen_layer()
     proc.calculate_means(atnsjoen.polygon_layer_files, atnsjoen.raster_layer_files, atnsjoen.attribute_names)
     
-def viksvatn_dem_features():
-    # calculate DEM-feature (elevation, slope, aspect) for subcatchment features
-    viksvatn = viksvatn_layers()
-    proc.calculate_means(viksvatn.polygon_layer_files, viksvatn.dem_feature_files, viksvatn.dem_feature_attribute_names)
-
 def atnsjoen_dem_features():
     # calculate DEM-feature (elevation, slope, aspect) for subcatchment features
     atnsjoen = atnsjoen_layers()
@@ -110,14 +138,18 @@ def get_nr_cells(catchment):
         nr_cells += len([f for f in poly_object.getFeatures()])
     return nr_cells
 
-
-def write_viksvatn_cell_data():
-    viksvatn = viksvatn_layers()
-    create_cell_data_files(viksvatn)
-
 def write_atnsjoen_cell_data():
     atnsjoen = atnsjoen_layers()
     create_cell_data_files(atnsjoen)
+
+
+
+
+
+
+
+
+
 
 def create_cell_data_files(catchment, nc_path='/home/felixm/00_PhD/enki/enki_data/qgis_scripts/cell_data'):
     nr_cells = get_nr_cells(catchment)
@@ -241,3 +273,14 @@ def create_cell_data_files(catchment, nc_path='/home/felixm/00_PhD/enki/enki_dat
         slope_var.grid_mapping = 'crs'
         slope_var.coordinates = 'y x z'
         slope_var.standard_name = "slope angle of area"
+
+
+if __name__ == "__main__":
+
+    HOME= os.environ['HOME']
+    DATA_PATH= HOME+'/Documents/finse/GIS_data/'
+    DATA_INT=DATA_PATH+'shyft_catchments/int'
+
+	finse = setup_finse()
+    finse.copy_files(DATA_INT) # create intermediate files and point them to polygon_layer_files
+    finse.calculate_means()
