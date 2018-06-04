@@ -1,14 +1,13 @@
 import sys
 import os
 
-
 # local imports
 HOME= os.environ['HOME']
-workdir = HOME+"/Documents/github/shyft-gis/project"
-sys.path.append(workdir)
+WORKDIR = HOME+"/shyft-gis"
+#sys.path.append(WORKDIR)
 import process_layers as proc
 
-def setup_finse(DATA_PATH):
+def setup_exmaple_catchment(DATA_PATH):
     ptp = DATA_PATH # path to polygon
     ptr = DATA_PATH+'/corine_land_cover_2012/' # path to raster
     ptd = DATA_PATH+'/dem/'
@@ -34,12 +33,12 @@ def setup_finse(DATA_PATH):
     return finse
 
 
-DATA_PATH= HOME+'/Documents/github/shyft-gis/project/'
-DATA_INT=DATA_PATH+'/Documents/github/shyft-gis/project/int'
-OUT = DATA_PATH+'/Documents/github/shyft-gis/project/cell_data.nc'
+DATA_PATH= WORKDIR+'/finse_qgis' # dir with required catchment maps
+DATA_INT=DATA_PATH+'/int' # empty dir for intermediate files, must exist
+OUTFILE = DATA_PATH+'/cell_data.nc' # shyft cell data file
 
-finse = setup_finse(DATA_PATH)
-finse.copy_files(DATA_INT) # create intermediate files and point them to polygon_layer_files
-finse.calculate_landcover_attributes()
-finse.calculate_topography_attributes()
-finse.create_cell_data_files(OUT)
+catchment = setup_exmaple_catchment(DATA_PATH)
+catchment.copy_files(DATA_INT) # create intermediate files and point them to polygon_layer_files
+catchment.calculate_landcover_attributes()
+catchment.calculate_topography_attributes()
+catchment.create_cell_data_files(OUTFILE)
