@@ -18,5 +18,5 @@ To run the example (tested for Ubuntu 14.04 LTS and Qgis 2.18):
 
 If the script runs succesfully, a `cell_data.nc` is created in `$HOME/shyft-gis`.
 
-In order to setup other regions, the Qgis project in combination with the [layer_settings.py](https://github.com/felixmatt/shyft-gis/blob/master/layer_settings.py)
-gives an idea on which maps are required to run the scripts.
+In order to setup other regions, the Qgis project in combination with the [layer_settings.py](https://github.com/felixmatt/shyft-gis/blob/master/layer_settings.py) 
+file gives an idea on which maps are required to run the scripts.
