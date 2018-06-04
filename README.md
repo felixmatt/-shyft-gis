@@ -7,7 +7,7 @@ repository. The scripts rely on a working Qgis 2.x install (Qgis 3.x not tested)
 
 An exmaple is proveded in finse_qgis.tar.gz
 
-To run the example (ttested for Ubuntu 14.04 LTS and Qgis 2.18):
+To run the example (tested for Ubuntu 14.04 LTS and Qgis 2.18):
 
 - clone the repository to $HOME (`cd $HOME; git clone https://github.com/felixmatt/shyft-gis.git`)
 - untar finse_qgis.tar.gz (e.g. `tar -xvzf finse_qgis.tar.gz` in Ubuntu)
