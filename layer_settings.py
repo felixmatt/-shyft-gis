@@ -4,7 +4,7 @@ import os
 # local imports
 HOME= os.environ['HOME']
 WORKDIR = HOME+"/shyft-gis"
-#sys.path.append(WORKDIR)
+sys.path.append(WORKDIR)
 import process_layers as proc
 
 def setup_exmaple_catchment(DATA_PATH):
@@ -35,7 +35,7 @@ def setup_exmaple_catchment(DATA_PATH):
 
 DATA_PATH= WORKDIR+'/finse_qgis' # dir with required catchment maps
 DATA_INT=DATA_PATH+'/int' # empty dir for intermediate files, must exist
-OUTFILE = DATA_PATH+'/cell_data.nc' # shyft cell data file
+OUTFILE = WORKDIR+'/cell_data.nc' # shyft cell data file
 
 catchment = setup_exmaple_catchment(DATA_PATH)
 catchment.copy_files(DATA_INT) # create intermediate files and point them to polygon_layer_files
