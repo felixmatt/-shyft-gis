@@ -2,7 +2,7 @@
 
 This repository provides py-scripts and documentation for creating a Shyft cell data file 
 (netcdf format) that can be read using the 
-[cf_region_model_repository.py](https://github.com/statkraft/shyft/blob/master/shyft/repository/netcdf/cf_region_model_repository.py) 
+[CFRegionModelRepository](https://github.com/statkraft/shyft/blob/master/shyft/repository/netcdf/cf_region_model_repository.py) 
 repository. The scripts rely on a working Qgis 2.x install (Qgis 3.x not tested).
 
 An exmaple is proveded in finse_qgis.tar.gz
